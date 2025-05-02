@@ -1,0 +1,42 @@
+.animated-gradient-text {
+  font-size: 80px;
+  font-weight: bold;
+
+  background-image: linear-gradient(
+    to right,
+    #FACB4D 30%,
+    #F99831 50%,
+    #F6644F 80%
+  );
+  background-size: 200% auto;
+  background-position: 0% center;
+  animation: move-gradient 1s linear infinite alternate;
+
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+
+  display: inline-block;
+  cursor: default;
+}
+
+.letter-wrapper {
+  display: inline-block;
+  transition: -webkit-text-fill-color 0.3s ease, transform 0.3s ease;
+}
+
+.letter-wrapper:hover {
+  -webkit-text-fill-color: #F99831;
+  transform: scale(1.1);
+  transition: all ease-in-out .1s;
+}
+
+@keyframes move-gradient {
+  0% {
+    background-position: 0% center;
+  }
+  100% {
+    background-position: 100% center;
+  }
+}
