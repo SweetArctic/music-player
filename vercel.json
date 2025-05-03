@@ -1,4 +1,8 @@
 {
-    "buildCommand": "./vercel-build.sh"
+    "build": {
+      "env": {
+        "NPM_FLAGS": "--legacy-peer-deps"
+      }
+    }
   }
   
