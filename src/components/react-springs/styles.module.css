@@ -1,0 +1,18 @@
+.aqua-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #121212;
+  height: 100vh;
+  cursor: pointer;
+}
+
+.aqua-svg {
+  width: 20px;
+  height: auto;
+}
+
+.aqua-container:hover{
+  cursor: pointer;
+}

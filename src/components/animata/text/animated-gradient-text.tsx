@@ -1,26 +1,17 @@
-import React from "react";
-import "./AnimatedGradientText.css";
-
-interface AnimatedGradientTextProps {
-  className?: string;
-  children: React.ReactNode;
-}
+import { cn } from "../../../lib/utils";
 
 export default function AnimatedGradientText({
-  className = "",
+  className,
   children,
-}: AnimatedGradientTextProps) {
-  const text = typeof children === "string" ? children : "";
-
+}: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={`animated-gradient-text ${className}`}>
-      {text
-        ? text.split("").map((char, index) => (
-            <span className="letter-wrapper" key={index}>
-              {char}
-            </span>
-          ))
-        : children}
+    <div
+      className={cn(
+        "bg-size animate-bg-position bg-gradient-to-r from-yellow-500 from-30% via-yellow-700 via-50% to-pink-500 to-80% bg-[length:200%_auto] bg-clip-text text-transparent",
+        className,
+      )}
+    >
+      {children}
     </div>
   );
 }

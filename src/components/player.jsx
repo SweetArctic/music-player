@@ -1,8 +1,10 @@
 import React, { useRef, useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { Play, Pause, SkipForward, SkipBack, Volume2 } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, Volume2, Repeat, Shuffle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { songList } from '../data/SongList';
+import CustomProgressBar from './CustomProgressBar';
+import CustomVolumeControl from './CustomVolumeControl';
 
 const Container = styled.div`
   padding: 20px;
@@ -26,38 +28,71 @@ const Title = styled.h2`
 `;
 
 const Slider = styled.input.attrs({ type: 'range' })`
-  -webkit-appearance: none;
   width: 100%;
-  height: 4px;
-  background: #facb4d;
-  border-radius: 2px;
+  height: 6px;
+  background: #3a3a3a;
+  border-radius: 3px;
+  appearance: none;
   outline: none;
-  margin: 10px 0;
-  transition: background 0.3s;
+  cursor: pointer;
+  position: relative;
+
+  &::-webkit-slider-runnable-track {
+    height: 6px;
+    background: #3a3a3a;
+    border-radius: 3px;
+  }
 
   &::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    height: 14px;
-    width: 14px;
+    appearance: none;
+    background: #cfcfcf;
+    border: none;
     border-radius: 50%;
-    background: white;
-    transition: transform 0.2s;
+    width: 12px;
+    height: 12px;
+    margin-top: -3px; /* Centra el thumb verticalmente */
+    transition: transform 0.2s ease;
+    opacity: 0;
   }
 
   &:hover::-webkit-slider-thumb {
-    transform: scale(1.3);
+    opacity: 1;
+  }
+
+  &::-moz-range-track {
+    height: 6px;
+    background: #3a3a3a;
+    border-radius: 3px;
+  }
+
+  &::-moz-range-progress {
+    background: #cfcfcf;
+    height: 6px;
+    border-radius: 3px;
   }
 
   &::-moz-range-thumb {
-    height: 14px;
-    width: 14px;
+    background: #cfcfcf;
+    border: none;
     border-radius: 50%;
-    background: white;
-    transition: transform 0.2s;
+    width: 12px;
+    height: 12px;
+    transition: transform 0.2s ease;
+    opacity: 0;
   }
 
   &:hover::-moz-range-thumb {
-    transform: scale(1.3);
+    opacity: 1;
+  }
+
+  &::-ms-fill-lower {
+    background: #cfcfcf;
+    border-radius: 3px;
+  }
+
+  &::-ms-fill-upper {
+    background: #3a3a3a;
+    border-radius: 3px;
   }
 `;
 
@@ -94,20 +129,32 @@ const Player = ({ currentSong, setCurrentSong, isPlaying, setIsPlaying }) => {
   const [progress, setProgress] = useState(0);
   const [volume, setVolume] = useState(1);
   const [dragTime, setDragTime] = useState(null);
+  const [isLoop, setIsLoop] = useState(false);
+  const [isShuffle, setIsShuffle] = useState(false);
+
   const song = songList[currentSong];
 
   const handlePlayPause = () => {
+    const audio = audioRef.current;
     if (isPlaying) {
-      audioRef.current.pause();
+      audio.pause();
       setIsPlaying(false);
     } else {
-      audioRef.current.play();
+      audio.play();
       setIsPlaying(true);
     }
   };
 
   const handleNext = () => {
-    setCurrentSong((prev) => (prev + 1) % songList.length);
+    if (isShuffle) {
+      let next;
+      do {
+        next = Math.floor(Math.random() * songList.length);
+      } while (next === currentSong);
+      setCurrentSong(next);
+    } else {
+      setCurrentSong((prev) => (prev + 1) % songList.length);
+    }
   };
 
   const handlePrev = () => {
@@ -124,13 +171,17 @@ const Player = ({ currentSong, setCurrentSong, isPlaying, setIsPlaying }) => {
     const audio = audioRef.current;
     if (!audio) return;
 
+    audio.loop = isLoop;
+
     const updateProgress = () => setProgress(audio.currentTime);
-    const handleEnded = () => handleNext();
+    const handleEnded = () => {
+      if (!audio.loop) handleNext();
+    };
 
     audio.addEventListener('timeupdate', updateProgress);
     audio.addEventListener('ended', handleEnded);
 
-    audio.load();
+    // Solo se hace play si isPlaying es true, pero no se hace load()
     if (isPlaying) {
       audio.play().catch(() => {});
     } else {
@@ -141,7 +192,7 @@ const Player = ({ currentSong, setCurrentSong, isPlaying, setIsPlaying }) => {
       audio.removeEventListener('timeupdate', updateProgress);
       audio.removeEventListener('ended', handleEnded);
     };
-  }, [currentSong, isPlaying]);
+  }, [currentSong, isPlaying, isLoop]);
 
   return (
     <Container>
@@ -154,23 +205,13 @@ const Player = ({ currentSong, setCurrentSong, isPlaying, setIsPlaying }) => {
           {formatTime(dragTime !== null ? dragTime : progress)}
         </span>
 
-        <Slider
-          min="0"
-          max={audioRef.current?.duration || 0}
-          value={dragTime !== null ? dragTime : progress}
-          onChange={(e) => setDragTime(Number(e.target.value))}
-          onMouseUp={(e) => {
-            const value = Number(e.target.value);
-            audioRef.current.currentTime = value;
-            setProgress(value);
-            setDragTime(null);
-          }}
-          onTouchEnd={(e) => {
-            const value = Number(e.target.value);
-            audioRef.current.currentTime = value;
-            setProgress(value);
-            setDragTime(null);
-          }}
+        <CustomProgressBar
+        currentTime={progress}
+        duration={audioRef.current?.duration || 0}
+        onChange={(time) => {
+            audioRef.current.currentTime = time;
+            setProgress(time);
+        }}
         />
 
         <span style={{ width: 40, textAlign: 'right', fontSize: '14px' }}>
@@ -179,6 +220,10 @@ const Player = ({ currentSong, setCurrentSong, isPlaying, setIsPlaying }) => {
       </div>
 
       <Controls>
+        <IconButton onClick={() => setIsLoop(!isLoop)} title="Bucle">
+          <Repeat size={24} color={isLoop ? '#FACB4D' : 'white'} />
+        </IconButton>
+
         <IconButton onClick={handlePrev}>
           <motion.div whileTap={{ scale: 0.8 }}>
             <SkipBack size={36} />
@@ -188,23 +233,11 @@ const Player = ({ currentSong, setCurrentSong, isPlaying, setIsPlaying }) => {
         <IconButton onClick={handlePlayPause}>
           <AnimatePresence mode="wait">
             {isPlaying ? (
-              <motion.div
-                key="pause"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
+              <motion.div key="pause" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }} transition={{ duration: 0.2 }}>
                 <Pause size={36} />
               </motion.div>
             ) : (
-              <motion.div
-                key="play"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
+              <motion.div key="play" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }} transition={{ duration: 0.2 }}>
                 <Play size={36} />
               </motion.div>
             )}
@@ -216,18 +249,16 @@ const Player = ({ currentSong, setCurrentSong, isPlaying, setIsPlaying }) => {
             <SkipForward size={36} />
           </motion.div>
         </IconButton>
+
+        <IconButton onClick={() => setIsShuffle(!isShuffle)} title="Aleatorio">
+          <Shuffle size={24} color={isShuffle ? '#FACB4D' : 'white'} />
+        </IconButton>
       </Controls>
 
-      <VolumeContainer>
-        <Volume2 size={20} />
-        <Slider
-          min="0"
-          max="1"
-          step="0.01"
-          value={volume}
-          onChange={handleVolumeChange}
-        />
-      </VolumeContainer>
+      <CustomVolumeControl volume={volume} setVolume={(v) => {
+        setVolume(v);
+        audioRef.current.volume = v;
+        }} />
     </Container>
   );
 };

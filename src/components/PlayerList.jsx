@@ -2,7 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { Play, Pause } from 'lucide-react';
 import { songList } from '../data/SongList';
-import AnimatedGradientText from '../components/animata/text/animated-gradient-text';
+import AcuaticTitle from './react-springs/acuaticTitle';
 
 const Container = styled.div`
   padding: 20px;
@@ -102,11 +102,7 @@ const PlayerList = ({ currentSong, setCurrentSong, isPlaying, setIsPlaying }) =>
 
   return (
     <Container>
-
-    <AnimatedGradientText className="text-6xl" style={{ marginBottom: '20px' }}>
-        Player Max
-    </AnimatedGradientText>
-
+    <AcuaticTitle />
       {songList.map((song, index) => (
         <ListItem key={index} $active={currentSong === index}>
           <CoverWrapper>
